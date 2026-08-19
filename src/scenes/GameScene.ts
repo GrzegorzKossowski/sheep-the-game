@@ -234,6 +234,8 @@ export class GameScene extends Phaser.Scene {
     }
     const wolf = new Wolf(this, x, y, this.level.wolfSpeed, animalBounds, field);
     wolf.on("catch", (sheep: Sheep) => this.onSheepCaught(sheep));
+    wolf.on("eliminated", () => this.showToast("Wilk przepędzony poza planszę!", "#a3e635"));
+    wolf.on("gaveUp", () => this.showToast("Wilk się poddaje i się wycofuje.", "#9ca3af"));
     this.wolves.push(wolf);
   }
 
