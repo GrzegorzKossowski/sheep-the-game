@@ -56,7 +56,7 @@ export const SHEEP_RADIUS = 9;
 export const DOG_RADIUS = 11;
 export const WOLF_RADIUS = 11;
 
-export const SHEEP_WANDER_SPEED = 34;
+export const SHEEP_WANDER_SPEED = 16;
 export const SHEEP_FLEE_MIN_SPEED = 90;
 export const SHEEP_FLEE_MAX_SPEED = 175;
 export const SHEEP_FLEE_JITTER_DEG = 18;
