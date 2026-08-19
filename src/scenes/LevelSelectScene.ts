@@ -24,15 +24,6 @@ export class LevelSelectScene extends Phaser.Scene {
 
     makeButton(this, 120, this.H - 50, 180, 48, "Menu główne", () => this.scene.start("Menu"));
     makeButton(this, this.W - 150, this.H - 50, 240, 48, "Resetuj postęp", () => this.confirmReset());
-
-    const save = loadSave();
-    this.add
-      .text(this.W / 2, this.H - 50, `Monety: ${save.coins}`, {
-        fontFamily: "sans-serif",
-        fontSize: "20px",
-        color: "#facc15",
-      })
-      .setOrigin(0.5);
   }
 
   private drawGrid(): void {

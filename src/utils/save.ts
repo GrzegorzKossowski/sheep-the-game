@@ -8,11 +8,10 @@ export interface LevelRecord {
 export interface SaveData {
   unlockedLevel: number;
   levels: Record<number, LevelRecord>;
-  coins: number;
 }
 
 function defaultSave(): SaveData {
-  return { unlockedLevel: 1, levels: {}, coins: 0 };
+  return { unlockedLevel: 1, levels: {} };
 }
 
 export function loadSave(): SaveData {
@@ -37,22 +36,16 @@ export function resetSave(): SaveData {
   return fresh;
 }
 
-export function recordLevelResult(
-  levelId: number,
-  stars: number,
-  timeMs: number,
-  coinsEarned: number,
-): SaveData {
+export function recordLevelResult(levelId: number, stars: number, timeMs: number, success: boolean): SaveData {
   const save = loadSave();
   const existing = save.levels[levelId];
   save.levels[levelId] = {
     bestStars: Math.max(existing?.bestStars ?? 0, stars),
     bestTimeMs: existing?.bestTimeMs ? Math.min(existing.bestTimeMs, timeMs) : timeMs,
   };
-  if (stars > 0 && levelId >= save.unlockedLevel && levelId < TOTAL_LEVELS) {
+  if (success && levelId >= save.unlockedLevel && levelId < TOTAL_LEVELS) {
     save.unlockedLevel = levelId + 1;
   }
-  save.coins += coinsEarned;
   writeSave(save);
   return save;
 }

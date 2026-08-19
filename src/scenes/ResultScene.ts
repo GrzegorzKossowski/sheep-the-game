@@ -2,6 +2,7 @@ import Phaser from "phaser";
 import { COLORS, TOTAL_LEVELS } from "../config/constants.ts";
 import { getLevel } from "../config/levels.ts";
 import { recordLevelResult } from "../utils/save.ts";
+import { computeStars } from "../utils/scoring.ts";
 import { makeButton } from "../utils/ui.ts";
 
 interface ResultSceneData {
@@ -9,18 +10,6 @@ interface ResultSceneData {
   elapsedMs: number;
   success: boolean;
   sheepLost: number;
-}
-
-function computeStars(
-  elapsedSec: number,
-  thresholds: { threeStar: number; twoStar: number; oneStar: number },
-  sheepLost: number,
-): number {
-  let stars = 0;
-  if (elapsedSec <= thresholds.threeStar) stars = 3;
-  else if (elapsedSec <= thresholds.twoStar) stars = 2;
-  else if (elapsedSec <= thresholds.oneStar) stars = 1;
-  return Math.max(stars - sheepLost, 0);
 }
 
 export class ResultScene extends Phaser.Scene {
@@ -39,9 +28,8 @@ export class ResultScene extends Phaser.Scene {
     const level = getLevel(data.levelId);
     const elapsedSec = data.elapsedMs / 1000;
     const stars = data.success ? computeStars(elapsedSec, level.timeThresholds, data.sheepLost) : 0;
-    const coinsEarned = data.success ? Math.max(stars * 10 + level.id * 2, 5) : 0;
 
-    recordLevelResult(data.levelId, stars, data.elapsedMs, coinsEarned);
+    recordLevelResult(data.levelId, stars, data.elapsedMs, data.success);
 
     const hasLosses = data.sheepLost > 0;
     let title = "Poziom nieudany";
@@ -74,13 +62,15 @@ export class ResultScene extends Phaser.Scene {
           })
           .setOrigin(0.5);
       }
-      this.add
-        .text(cx, baseY + (hasLosses ? 192 : 172), `Zdobyte monety: +${coinsEarned}`, {
-          fontFamily: "sans-serif",
-          fontSize: "18px",
-          color: "#facc15",
-        })
-        .setOrigin(0.5);
+      if (stars === 0) {
+        this.add
+          .text(cx, baseY + (hasLosses ? 192 : 172), "Poziom zaliczony, ale bez gwiazdek — spróbuj szybciej.", {
+            fontFamily: "sans-serif",
+            fontSize: "15px",
+            color: "#9ca3af",
+          })
+          .setOrigin(0.5);
+      }
     } else {
       this.add
         .text(cx, baseY + 100, "Wilki złapały wszystkie owce zanim zdążyłeś je zebrać.\nSpróbuj ponownie.", {
@@ -95,7 +85,7 @@ export class ResultScene extends Phaser.Scene {
     const y = baseY + 250;
     makeButton(this, cx - 170, y, 160, 48, "Powtórz", () => this.scene.start("Game", { levelId: data.levelId }));
 
-    if (data.success && stars > 0 && data.levelId < TOTAL_LEVELS) {
+    if (data.success && data.levelId < TOTAL_LEVELS) {
       makeButton(this, cx, y, 160, 48, "Następny", () => this.scene.start("Game", { levelId: data.levelId + 1 }));
     }
 

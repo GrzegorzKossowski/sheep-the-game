@@ -4,6 +4,7 @@ import { getLevel, type LevelConfig } from "../config/levels.ts";
 import { Dog } from "../entities/Dog.ts";
 import { Sheep } from "../entities/Sheep.ts";
 import { Wolf } from "../entities/Wolf.ts";
+import { computeStars } from "../utils/scoring.ts";
 import { randomRange } from "../utils/steering.ts";
 import { makeButton } from "../utils/ui.ts";
 
@@ -21,9 +22,11 @@ export class GameScene extends Phaser.Scene {
   private startTime = 0;
   private ended = false;
   private sheepLostCount = 0;
+  private lastLiveStars = 3;
 
   private timerText!: Phaser.GameObjects.Text;
   private statusText!: Phaser.GameObjects.Text;
+  private starsText!: Phaser.GameObjects.Text;
   private toast?: Phaser.GameObjects.Text;
 
   constructor() {
@@ -38,6 +41,7 @@ export class GameScene extends Phaser.Scene {
     this.activeDogIndex = 0;
     this.ended = false;
     this.sheepLostCount = 0;
+    this.lastLiveStars = 3;
   }
 
   create(): void {
@@ -113,6 +117,11 @@ export class GameScene extends Phaser.Scene {
 
     this.timerText = this.add
       .text(16, HUD_HEIGHT / 2, "0.0 s", { fontFamily: "sans-serif", fontSize: "20px", color: "#ffffff" })
+      .setOrigin(0, 0.5)
+      .setDepth(21);
+
+    this.starsText = this.add
+      .text(130, HUD_HEIGHT / 2, "★★★", { fontFamily: "sans-serif", fontSize: "20px", color: "#facc15" })
       .setOrigin(0, 0.5)
       .setDepth(21);
 
@@ -267,6 +276,13 @@ export class GameScene extends Phaser.Scene {
 
     const elapsedSec = (this.time.now - this.startTime) / 1000;
     this.timerText.setText(`${elapsedSec.toFixed(1)} s`);
+
+    const liveStars = computeStars(elapsedSec, this.level.timeThresholds, this.sheepLostCount);
+    this.starsText.setText("★".repeat(liveStars) + "☆".repeat(3 - liveStars));
+    if (liveStars < this.lastLiveStars) {
+      this.showToast("Straciłeś gwiazdkę!", "#fbbf24");
+    }
+    this.lastLiveStars = liveStars;
 
     const penCenter = this.layout.penCenter;
     const liveSheep = this.sheep.filter((s) => !s.caught);

@@ -18,8 +18,9 @@ const RULES = [
   "  • Podprowadź psa blisko wilka, aby wypłoszyć go poza planszę",
   "",
   "Wynik:",
-  "  • Im szybciej zapędzisz wszystkie owce, tym więcej gwiazdek i monet zdobędziesz",
-  "  • Utrata owcy na rzecz wilka obniża liczbę gwiazdek, ale gra toczy się dalej",
+  "  • Zaczynasz z trzema gwiazdkami – znikają jedna po drugiej, gdy czas mija",
+  "  • Utrata owcy na rzecz wilka też kosztuje gwiazdkę, ale gra toczy się dalej",
+  "  • Poziom liczy się jako ukończony nawet bez gwiazdek – liczy się dotarcie owiec do zagrody",
   "  • Poziom kończy się porażką tylko, gdy wilki złapią wszystkie owce",
 ];
 
