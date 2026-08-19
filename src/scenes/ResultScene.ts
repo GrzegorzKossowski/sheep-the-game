@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import { COLORS, TOTAL_LEVELS } from "../config/constants.ts";
+import { TOTAL_LEVELS } from "../config/constants.ts";
 import { getLevel } from "../config/levels.ts";
 import { recordLevelResult } from "../utils/save.ts";
 import { computeStars } from "../utils/scoring.ts";
@@ -28,7 +28,6 @@ export class ResultScene extends Phaser.Scene {
     this.tweens.add({ targets: modal, alpha: 1, duration: 250, ease: "Quad.Out" });
 
     modal.add(this.add.rectangle(0, 0, W, H, 0x000000, 0.6).setOrigin(0));
-    modal.add(this.add.rectangle(cx, cy, 460, 360, COLORS.panel, 0.97).setStrokeStyle(2, 0xffffff, 0.25));
 
     const level = getLevel(data.levelId);
     const elapsedSec = data.elapsedMs / 1000;
