@@ -138,23 +138,25 @@ export class Sheep extends Phaser.GameObjects.Image {
     this.y = clamped.y;
 
     const distToPen = Phaser.Math.Distance.Between(this.x, this.y, this.penCenter.x, this.penCenter.y);
-    if (distToPen < this.penRadius - SHEEP_RADIUS * 0.3) {
+    if (distToPen < this.penRadius - SHEEP_RADIUS * 1.2) {
       this.settled = true;
     }
   }
 
-  /** Grazes calmly inside the pen, ignoring dogs and wolves entirely. */
+  /** Grazes calmly inside the pen, ignoring dogs and wolves entirely. Always keeps moving. */
   private updateSettled(deltaSec: number): void {
     this.wanderAngle += randomRange(-0.5, 0.5) * deltaSec;
     const speed = this.wanderSpeed * SETTLE_SPEED_FACTOR;
-    const nx = this.x + Math.cos(this.wanderAngle) * speed * deltaSec;
-    const ny = this.y + Math.sin(this.wanderAngle) * speed * deltaSec;
     const maxDist = this.penRadius - SHEEP_RADIUS * 0.8;
-    if (Phaser.Math.Distance.Between(nx, ny, this.penCenter.x, this.penCenter.y) <= maxDist) {
-      this.x = nx;
-      this.y = ny;
-    } else {
-      this.wanderAngle = Phaser.Math.Angle.Between(this.x, this.y, this.penCenter.x, this.penCenter.y) + randomRange(-0.6, 0.6);
+
+    let nx = this.x + Math.cos(this.wanderAngle) * speed * deltaSec;
+    let ny = this.y + Math.sin(this.wanderAngle) * speed * deltaSec;
+    if (Phaser.Math.Distance.Between(nx, ny, this.penCenter.x, this.penCenter.y) > maxDist) {
+      this.wanderAngle = Phaser.Math.Angle.Between(this.x, this.y, this.penCenter.x, this.penCenter.y) + randomRange(-0.5, 0.5);
+      nx = this.x + Math.cos(this.wanderAngle) * speed * deltaSec;
+      ny = this.y + Math.sin(this.wanderAngle) * speed * deltaSec;
     }
+    this.x = nx;
+    this.y = ny;
   }
 }
