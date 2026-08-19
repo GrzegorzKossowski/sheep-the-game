@@ -206,7 +206,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private warnThenSpawnWolf(): void {
-    this.showToast("⚠️ Nadciąga wilk!", "#fbbf24");
+    this.showToast("UWAGA: nadciąga wilk!", "#fbbf24");
     this.time.delayedCall(800, () => {
       if (this.ended) return;
       this.spawnWolf();

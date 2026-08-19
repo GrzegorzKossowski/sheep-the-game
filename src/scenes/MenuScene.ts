@@ -15,7 +15,7 @@ export class MenuScene extends Phaser.Scene {
 
     this.add.rectangle(0, 0, W, H, COLORS.background).setOrigin(0);
     this.add
-      .text(cx, cy - 150, "🐑 Sheep the Game", { fontFamily: "sans-serif", fontSize: "48px", color: "#ffffff" })
+      .text(cx, cy - 150, "Sheep the Game", { fontFamily: "sans-serif", fontSize: "48px", color: "#ffffff" })
       .setOrigin(0.5);
     this.add
       .text(cx, cy - 95, "Zbierz owce do zagrody, zanim złapią je wilki", {

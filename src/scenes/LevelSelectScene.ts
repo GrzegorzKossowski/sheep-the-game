@@ -52,7 +52,7 @@ export class LevelSelectScene extends Phaser.Scene {
         .setOrigin(0.5);
 
       if (!unlocked) {
-        this.add.text(x, y + 22, "🔒", { fontSize: "20px" }).setOrigin(0.5);
+        this.drawLockIcon(x, y + 22);
       } else {
         const stars = record?.bestStars ?? 0;
         const starStr = "★".repeat(stars) + "☆".repeat(3 - stars);
@@ -68,6 +68,19 @@ export class LevelSelectScene extends Phaser.Scene {
         box.on("pointerup", () => this.scene.start("Game", { levelId }));
       }
     }
+  }
+
+  /** Drawn instead of the 🔒 emoji so it renders identically without relying on a system emoji font. */
+  private drawLockIcon(x: number, y: number): void {
+    const g = this.add.graphics();
+    g.fillStyle(0x777777, 1);
+    g.fillRoundedRect(x - 9, y - 2, 18, 14, 3);
+    g.lineStyle(3, 0x777777, 1);
+    g.beginPath();
+    g.arc(x, y - 4, 6, Math.PI, 0, false);
+    g.strokePath();
+    g.fillStyle(0x2a2f22, 1);
+    g.fillCircle(x, y + 4, 2.2);
   }
 
   private confirmReset(): void {
