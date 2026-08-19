@@ -313,13 +313,14 @@ export class GameScene extends Phaser.Scene {
     if (this.ended) return;
     this.ended = true;
     const elapsedMs = this.time.now - this.startTime;
-    this.time.delayedCall(200, () => {
-      this.scene.start("Result", {
+    this.time.delayedCall(500, () => {
+      this.scene.launch("Result", {
         levelId: this.level.id,
         elapsedMs,
         success,
         sheepLost: this.sheepLostCount,
       });
+      this.scene.pause();
     });
   }
 }
