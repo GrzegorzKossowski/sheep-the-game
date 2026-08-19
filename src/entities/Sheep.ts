@@ -1,13 +1,6 @@
 import Phaser from "phaser";
-import {
-  ANIMAL_BOUNDS,
-  ANIMAL_CORNER_RADIUS,
-  SHEEP_FLEE_JITTER_DEG,
-  SHEEP_FLEE_MAX_SPEED,
-  SHEEP_FLEE_MIN_SPEED,
-  SHEEP_SEPARATION_RADIUS,
-  SHEEP_WANDER_SPEED,
-} from "../config/constants.ts";
+import { ANIMAL_CORNER_RADIUS, SHEEP_FLEE_JITTER_DEG, SHEEP_SEPARATION_RADIUS } from "../config/constants.ts";
+import type { RectBounds } from "../utils/steering.ts";
 import { clampToRoundedRect, randomRange } from "../utils/steering.ts";
 import type { Dog } from "./Dog.ts";
 import type { Wolf } from "./Wolf.ts";
@@ -21,9 +14,25 @@ export class Sheep extends Phaser.GameObjects.Image {
   private jitterAngle = 0;
   private jitterTimer = 0;
   caught = false;
+  private wanderSpeed: number;
+  private fleeMinSpeed: number;
+  private fleeMaxSpeed: number;
+  private animalBounds: RectBounds;
 
-  constructor(scene: Phaser.Scene, x: number, y: number) {
+  constructor(
+    scene: Phaser.Scene,
+    x: number,
+    y: number,
+    wanderSpeed: number,
+    fleeMinSpeed: number,
+    fleeMaxSpeed: number,
+    animalBounds: RectBounds,
+  ) {
     super(scene, x, y, "sheep");
+    this.wanderSpeed = wanderSpeed;
+    this.fleeMinSpeed = fleeMinSpeed;
+    this.fleeMaxSpeed = fleeMaxSpeed;
+    this.animalBounds = animalBounds;
     scene.add.existing(this);
     this.setDepth(5);
     this.rerollJitter();
@@ -80,13 +89,13 @@ export class Sheep extends Phaser.GameObjects.Image {
       const finalAngle = baseAngle + this.jitterAngle;
       dirX = Math.cos(finalAngle);
       dirY = Math.sin(finalAngle);
-      speed = Phaser.Math.Linear(SHEEP_FLEE_MIN_SPEED, SHEEP_FLEE_MAX_SPEED, Math.min(maxWeight, 1));
+      speed = Phaser.Math.Linear(this.fleeMinSpeed, this.fleeMaxSpeed, Math.min(maxWeight, 1));
       this.wanderAngle = finalAngle;
     } else {
       this.wanderAngle += randomRange(-0.6, 0.6) * deltaSec;
       dirX = Math.cos(this.wanderAngle);
       dirY = Math.sin(this.wanderAngle);
-      speed = SHEEP_WANDER_SPEED;
+      speed = this.wanderSpeed;
     }
 
     let sepX = 0;
@@ -106,7 +115,7 @@ export class Sheep extends Phaser.GameObjects.Image {
     this.x += vx * deltaSec;
     this.y += vy * deltaSec;
 
-    const clamped = clampToRoundedRect(this.x, this.y, ANIMAL_BOUNDS, ANIMAL_CORNER_RADIUS);
+    const clamped = clampToRoundedRect(this.x, this.y, this.animalBounds, ANIMAL_CORNER_RADIUS);
     this.x = clamped.x;
     this.y = clamped.y;
   }

@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import { DOG_BOUNDS } from "../config/constants.ts";
+import type { RectBounds } from "../utils/steering.ts";
 import { clampToRoundedRect } from "../utils/steering.ts";
 
 export class Dog extends Phaser.GameObjects.Image {
@@ -8,6 +8,7 @@ export class Dog extends Phaser.GameObjects.Image {
   influenceRadius: number;
   targetPoint: Phaser.Math.Vector2 | null = null;
   ring: Phaser.GameObjects.Arc;
+  private dogBounds: RectBounds;
 
   constructor(
     scene: Phaser.Scene,
@@ -16,11 +17,13 @@ export class Dog extends Phaser.GameObjects.Image {
     index: number,
     speed: number,
     influenceRadius: number,
+    dogBounds: RectBounds,
   ) {
     super(scene, x, y, "dog");
     this.index = index;
     this.speed = speed;
     this.influenceRadius = influenceRadius;
+    this.dogBounds = dogBounds;
     scene.add.existing(this);
     this.setDepth(10);
 
@@ -51,7 +54,7 @@ export class Dog extends Phaser.GameObjects.Image {
       }
     }
 
-    const clamped = clampToRoundedRect(this.x, this.y, DOG_BOUNDS, 24);
+    const clamped = clampToRoundedRect(this.x, this.y, this.dogBounds, 24);
     this.x = clamped.x;
     this.y = clamped.y;
 

@@ -1,29 +1,33 @@
 import Phaser from "phaser";
-import { CANVAS_HEIGHT, CANVAS_WIDTH, COLORS, TOTAL_LEVELS } from "../config/constants.ts";
+import { COLORS, TOTAL_LEVELS } from "../config/constants.ts";
 import { loadSave, resetSave } from "../utils/save.ts";
 import { makeButton } from "../utils/ui.ts";
 
 export class LevelSelectScene extends Phaser.Scene {
+  private W = 0;
+  private H = 0;
+
   constructor() {
     super("LevelSelect");
   }
 
   create(): void {
-    this.add.rectangle(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT, COLORS.background).setOrigin(0);
+    this.W = this.scale.width;
+    this.H = this.scale.height;
+
+    this.add.rectangle(0, 0, this.W, this.H, COLORS.background).setOrigin(0);
     this.add
-      .text(CANVAS_WIDTH / 2, 40, "Wybierz poziom", { fontFamily: "sans-serif", fontSize: "32px", color: "#ffffff" })
+      .text(this.W / 2, 40, "Wybierz poziom", { fontFamily: "sans-serif", fontSize: "32px", color: "#ffffff" })
       .setOrigin(0.5, 0);
 
     this.drawGrid();
 
-    makeButton(this, 120, CANVAS_HEIGHT - 50, 180, 48, "Menu główne", () => this.scene.start("Menu"));
-    makeButton(this, CANVAS_WIDTH - 150, CANVAS_HEIGHT - 50, 240, 48, "Resetuj postęp", () =>
-      this.confirmReset(),
-    );
+    makeButton(this, 120, this.H - 50, 180, 48, "Menu główne", () => this.scene.start("Menu"));
+    makeButton(this, this.W - 150, this.H - 50, 240, 48, "Resetuj postęp", () => this.confirmReset());
 
     const save = loadSave();
     this.add
-      .text(CANVAS_WIDTH / 2, CANVAS_HEIGHT - 50, `Monety: ${save.coins}`, {
+      .text(this.W / 2, this.H - 50, `Monety: ${save.coins}`, {
         fontFamily: "sans-serif",
         fontSize: "20px",
         color: "#facc15",
@@ -35,8 +39,8 @@ export class LevelSelectScene extends Phaser.Scene {
     const save = loadSave();
     const cols = 5;
     const cell = 130;
-    const startX = CANVAS_WIDTH / 2 - ((cols - 1) * cell) / 2;
-    const y = 220;
+    const startX = this.W / 2 - ((cols - 1) * cell) / 2;
+    const y = Math.min(220, this.H / 2 - 60);
 
     for (let i = 0; i < TOTAL_LEVELS; i++) {
       const levelId = i + 1;
@@ -76,11 +80,13 @@ export class LevelSelectScene extends Phaser.Scene {
   }
 
   private confirmReset(): void {
-    const overlay = this.add.rectangle(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT, 0x000000, 0.7).setOrigin(0);
-    const panel = this.add.rectangle(CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2, 420, 200, COLORS.panel, 1);
+    const W = this.W;
+    const H = this.H;
+    const overlay = this.add.rectangle(0, 0, W, H, 0x000000, 0.7).setOrigin(0);
+    const panel = this.add.rectangle(W / 2, H / 2, 420, 200, COLORS.panel, 1);
     panel.setStrokeStyle(2, 0xffffff, 0.3);
     const text = this.add
-      .text(CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 - 50, "Zresetować cały postęp?\nDla nowego gracza.", {
+      .text(W / 2, H / 2 - 50, "Zresetować cały postęp?\nDla nowego gracza.", {
         fontFamily: "sans-serif",
         fontSize: "18px",
         color: "#ffffff",
@@ -89,14 +95,14 @@ export class LevelSelectScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     const group = [overlay, panel, text];
-    const yesBtn = makeButton(this, CANVAS_WIDTH / 2 - 80, CANVAS_HEIGHT / 2 + 40, 140, 48, "Tak, resetuj", () => {
+    const yesBtn = makeButton(this, W / 2 - 80, H / 2 + 40, 140, 48, "Tak, resetuj", () => {
       resetSave();
       group.forEach((g) => g.destroy());
       yesBtn.destroy();
       noBtn.destroy();
       this.scene.restart();
     });
-    const noBtn = makeButton(this, CANVAS_WIDTH / 2 + 80, CANVAS_HEIGHT / 2 + 40, 140, 48, "Anuluj", () => {
+    const noBtn = makeButton(this, W / 2 + 80, H / 2 + 40, 140, 48, "Anuluj", () => {
       group.forEach((g) => g.destroy());
       yesBtn.destroy();
       noBtn.destroy();

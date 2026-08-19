@@ -1,11 +1,6 @@
 import Phaser from "phaser";
-import {
-  ANIMAL_BOUNDS,
-  ANIMAL_CORNER_RADIUS,
-  FIELD,
-  SHEEP_RADIUS,
-  WOLF_RADIUS,
-} from "../config/constants.ts";
+import { ANIMAL_CORNER_RADIUS, SHEEP_RADIUS, WOLF_RADIUS } from "../config/constants.ts";
+import type { RectBounds } from "../utils/steering.ts";
 import { clampToRoundedRect, randomRange } from "../utils/steering.ts";
 import type { Dog } from "./Dog.ts";
 import type { Sheep } from "./Sheep.ts";
@@ -13,6 +8,7 @@ import type { Sheep } from "./Sheep.ts";
 const DOG_SCARE_RADIUS = 115;
 const CATCH_DISTANCE = SHEEP_RADIUS + WOLF_RADIUS - 2;
 const EXIT_MARGIN = 40;
+const SPAWN_GRACE_MS = 900;
 
 type WolfState = "hunting" | "fleeing" | "exiting";
 
@@ -21,16 +17,35 @@ export class Wolf extends Phaser.GameObjects.Image {
   eliminated = false;
   private mode: WolfState = "hunting";
   private exitAngle = 0;
+  private graceMs = SPAWN_GRACE_MS;
+  private animalBounds: RectBounds;
+  private field: RectBounds;
 
-  constructor(scene: Phaser.Scene, x: number, y: number, speed: number) {
+  constructor(
+    scene: Phaser.Scene,
+    x: number,
+    y: number,
+    speed: number,
+    animalBounds: RectBounds,
+    field: RectBounds,
+  ) {
     super(scene, x, y, "wolf");
     this.speed = speed;
+    this.animalBounds = animalBounds;
+    this.field = field;
     scene.add.existing(this);
     this.setDepth(6);
+    this.setScale(0);
+    scene.tweens.add({ targets: this, scale: 1, duration: SPAWN_GRACE_MS, ease: "Back.Out" });
   }
 
   update(deltaSec: number, dogs: Dog[], sheep: Sheep[]): void {
     if (this.eliminated) return;
+
+    if (this.graceMs > 0) {
+      this.graceMs -= deltaSec * 1000;
+      return;
+    }
 
     if (this.mode === "hunting" || this.mode === "fleeing") {
       let nearestDog: Dog | null = null;
@@ -50,12 +65,7 @@ export class Wolf extends Phaser.GameObjects.Image {
         this.x += Math.cos(angle) * step;
         this.y += Math.sin(angle) * step;
 
-        const beyondField =
-          this.x < FIELD.x - EXIT_MARGIN ||
-          this.x > FIELD.x + FIELD.width + EXIT_MARGIN ||
-          this.y < FIELD.y - EXIT_MARGIN ||
-          this.y > FIELD.y + FIELD.height + EXIT_MARGIN;
-        if (beyondField) {
+        if (this.isBeyondField()) {
           this.eliminated = true;
           this.emit("eliminated");
           this.destroy();
@@ -79,7 +89,7 @@ export class Wolf extends Phaser.GameObjects.Image {
         this.y += Math.sin(angle) * step;
       }
 
-      const clamped = clampToRoundedRect(this.x, this.y, ANIMAL_BOUNDS, ANIMAL_CORNER_RADIUS);
+      const clamped = clampToRoundedRect(this.x, this.y, this.animalBounds, ANIMAL_CORNER_RADIUS);
       this.x = clamped.x;
       this.y = clamped.y;
       return;
@@ -89,12 +99,7 @@ export class Wolf extends Phaser.GameObjects.Image {
       const step = this.speed * deltaSec;
       this.x += Math.cos(this.exitAngle) * step;
       this.y += Math.sin(this.exitAngle) * step;
-      const beyondField =
-        this.x < FIELD.x - EXIT_MARGIN ||
-        this.x > FIELD.x + FIELD.width + EXIT_MARGIN ||
-        this.y < FIELD.y - EXIT_MARGIN ||
-        this.y > FIELD.y + FIELD.height + EXIT_MARGIN;
-      if (beyondField) {
+      if (this.isBeyondField()) {
         this.eliminated = true;
         this.emit("exited");
         this.destroy();
@@ -102,10 +107,19 @@ export class Wolf extends Phaser.GameObjects.Image {
     }
   }
 
+  private isBeyondField(): boolean {
+    return (
+      this.x < this.field.x - EXIT_MARGIN ||
+      this.x > this.field.x + this.field.width + EXIT_MARGIN ||
+      this.y < this.field.y - EXIT_MARGIN ||
+      this.y > this.field.y + this.field.height + EXIT_MARGIN
+    );
+  }
+
   private beginExit(): void {
     this.mode = "exiting";
-    const centerX = FIELD.x + FIELD.width / 2;
-    const centerY = FIELD.y + FIELD.height / 2;
+    const centerX = this.field.x + this.field.width / 2;
+    const centerY = this.field.y + this.field.height / 2;
     this.exitAngle = Phaser.Math.Angle.Between(centerX, centerY, this.x, this.y) + randomRange(-0.2, 0.2);
   }
 

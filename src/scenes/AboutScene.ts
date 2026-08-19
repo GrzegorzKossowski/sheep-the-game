@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import { CANVAS_HEIGHT, CANVAS_WIDTH, COLORS } from "../config/constants.ts";
+import { COLORS } from "../config/constants.ts";
 import { makeButton } from "../utils/ui.ts";
 
 const RULES = [
@@ -13,12 +13,14 @@ const RULES = [
   "  • Owce uciekają od psów w przeciwną stronę, z lekkim losowym odchyleniem",
   "  • Im bliżej psa, tym szybciej owca ucieka",
   "  • Owce puszczone samopas błądzą powoli po łące",
-  "  • Uwaga na wilki! Są szybsze od owiec i mogą je złapać",
+  "  • Uwaga na wilki! Są nieco szybsze od owiec i mogą je złapać",
+  "  • Pojawienie się wilka jest zapowiadane ostrzeżeniem na ekranie",
   "  • Podprowadź psa blisko wilka, aby wypłoszyć go poza planszę",
   "",
   "Wynik:",
   "  • Im szybciej zapędzisz wszystkie owce, tym więcej gwiazdek i monet zdobędziesz",
-  "  • Utrata owcy na rzecz wilka kończy poziom niepowodzeniem – spróbuj ponownie",
+  "  • Utrata owcy na rzecz wilka obniża liczbę gwiazdek, ale gra toczy się dalej",
+  "  • Poziom kończy się porażką tylko, gdy wilki złapią wszystkie owce",
 ];
 
 export class AboutScene extends Phaser.Scene {
@@ -27,18 +29,21 @@ export class AboutScene extends Phaser.Scene {
   }
 
   create(): void {
-    this.add.rectangle(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT, COLORS.background).setOrigin(0);
+    const W = this.scale.width;
+    const H = this.scale.height;
+
+    this.add.rectangle(0, 0, W, H, COLORS.background).setOrigin(0);
     this.add
-      .text(CANVAS_WIDTH / 2, 40, "Zasady gry", { fontFamily: "sans-serif", fontSize: "32px", color: "#ffffff" })
+      .text(W / 2, 40, "Zasady gry", { fontFamily: "sans-serif", fontSize: "32px", color: "#ffffff" })
       .setOrigin(0.5, 0);
 
-    this.add.text(60, 100, RULES.join("\n"), {
+    this.add.text(Math.max(60, W / 2 - 420), 100, RULES.join("\n"), {
       fontFamily: "sans-serif",
       fontSize: "16px",
       color: "#e5e5e5",
       lineSpacing: 6,
     });
 
-    makeButton(this, CANVAS_WIDTH / 2, CANVAS_HEIGHT - 50, 160, 48, "Wstecz", () => this.scene.start("Menu"));
+    makeButton(this, W / 2, H - 50, 160, 48, "Wstecz", () => this.scene.start("Menu"));
   }
 }

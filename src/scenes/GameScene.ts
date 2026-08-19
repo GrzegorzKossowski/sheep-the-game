@@ -1,15 +1,5 @@
 import Phaser from "phaser";
-import {
-  ANIMAL_BOUNDS,
-  CANVAS_HEIGHT,
-  CANVAS_WIDTH,
-  COLORS,
-  DOG_BOUNDS,
-  FIELD,
-  HUD_HEIGHT,
-  PEN_CENTER,
-  SHEEP_RADIUS,
-} from "../config/constants.ts";
+import { COLORS, computeLayout, HUD_HEIGHT, SHEEP_RADIUS, type Layout } from "../config/constants.ts";
 import { getLevel, type LevelConfig } from "../config/levels.ts";
 import { Dog } from "../entities/Dog.ts";
 import { Sheep } from "../entities/Sheep.ts";
@@ -23,6 +13,7 @@ interface GameSceneData {
 
 export class GameScene extends Phaser.Scene {
   private level!: LevelConfig;
+  private layout!: Layout;
   private dogs: Dog[] = [];
   private sheep: Sheep[] = [];
   private wolves: Wolf[] = [];
@@ -50,27 +41,20 @@ export class GameScene extends Phaser.Scene {
   }
 
   create(): void {
-    this.add.rectangle(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT, COLORS.background).setOrigin(0);
-    this.add
-      .tileSprite(FIELD.x, FIELD.y, FIELD.width, FIELD.height, "grass_tile")
-      .setOrigin(0)
-      .setDepth(0);
-    this.add
-      .rectangle(FIELD.x, FIELD.y, FIELD.width, FIELD.height)
-      .setOrigin(0)
-      .setStrokeStyle(3, 0x2f4a24, 1)
-      .setDepth(1);
+    this.layout = computeLayout(this.scale.width, this.scale.height);
+    const { width, height, field, penCenter } = this.layout;
+
+    this.add.rectangle(0, 0, width, height, COLORS.background).setOrigin(0).setDepth(-2);
+    this.add.rectangle(0, HUD_HEIGHT, width, height - HUD_HEIGHT, COLORS.forestMid).setOrigin(0).setDepth(-1);
+    this.add.tileSprite(field.x, field.y, field.width, field.height, "grass_tile").setOrigin(0).setDepth(0);
+    this.drawForestEdge(field);
 
     this.add
-      .circle(PEN_CENTER.x, PEN_CENTER.y, this.level.penRadius, COLORS.pen, 1)
+      .circle(penCenter.x, penCenter.y, this.level.penRadius, COLORS.pen, 1)
       .setStrokeStyle(5, COLORS.penBorder, 1)
       .setDepth(2);
     this.add
-      .text(PEN_CENTER.x, PEN_CENTER.y, "ZAGRODA", {
-        fontFamily: "sans-serif",
-        fontSize: "13px",
-        color: "#5c4326",
-      })
+      .text(penCenter.x, penCenter.y, "ZAGRODA", { fontFamily: "sans-serif", fontSize: "13px", color: "#5c4326" })
       .setOrigin(0.5)
       .setDepth(3);
 
@@ -82,7 +66,7 @@ export class GameScene extends Phaser.Scene {
 
     this.input.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
       if (this.ended) return;
-      if (pointer.y < FIELD.y - 4) return;
+      if (pointer.y < field.y - 4) return;
       const dog = this.dogs[this.activeDogIndex];
       if (dog) dog.moveTo(pointer.x, pointer.y);
     });
@@ -97,8 +81,35 @@ export class GameScene extends Phaser.Scene {
     this.startTime = this.time.now;
   }
 
+  /** Scatters tree-canopy blobs along the field's border to read as a wavy forest edge. */
+  private drawForestEdge(field: Layout["field"]): void {
+    const g = this.add.graphics().setDepth(1);
+    const spacing = 22;
+    const palette = [COLORS.forestDark, COLORS.forestMid];
+    let seed = 11;
+    const rand = () => {
+      seed = (seed * 9301 + 49297) % 233280;
+      return seed / 233280;
+    };
+    const blob = (cx: number, cy: number) => {
+      const r = 12 + rand() * 11;
+      g.fillStyle(palette[Math.floor(rand() * palette.length)], 1);
+      g.fillCircle(cx, cy, r);
+    };
+
+    for (let x = field.x; x <= field.x + field.width; x += spacing) {
+      blob(x + (rand() - 0.5) * 10, field.y + (rand() - 0.5) * 10);
+      blob(x + (rand() - 0.5) * 10, field.y + field.height + (rand() - 0.5) * 10);
+    }
+    for (let y = field.y; y <= field.y + field.height; y += spacing) {
+      blob(field.x + (rand() - 0.5) * 10, y + (rand() - 0.5) * 10);
+      blob(field.x + field.width + (rand() - 0.5) * 10, y + (rand() - 0.5) * 10);
+    }
+  }
+
   private buildHud(): void {
-    this.add.rectangle(0, 0, CANVAS_WIDTH, HUD_HEIGHT, COLORS.hudBg, 1).setOrigin(0).setDepth(20);
+    const width = this.layout.width;
+    this.add.rectangle(0, 0, width, HUD_HEIGHT, COLORS.hudBg, 1).setOrigin(0).setDepth(20);
 
     this.timerText = this.add
       .text(16, HUD_HEIGHT / 2, "0.0 s", { fontFamily: "sans-serif", fontSize: "20px", color: "#ffffff" })
@@ -106,19 +117,15 @@ export class GameScene extends Phaser.Scene {
       .setDepth(21);
 
     this.statusText = this.add
-      .text(CANVAS_WIDTH / 2, HUD_HEIGHT / 2, "", {
-        fontFamily: "sans-serif",
-        fontSize: "18px",
-        color: "#c7e6a3",
-      })
+      .text(width / 2, HUD_HEIGHT / 2, "", { fontFamily: "sans-serif", fontSize: "18px", color: "#c7e6a3" })
       .setOrigin(0.5)
       .setDepth(21);
 
-    makeButton(this, CANVAS_WIDTH - 80, HUD_HEIGHT / 2, 120, 36, "Menu", () => this.confirmExit(), 15);
+    makeButton(this, width - 80, HUD_HEIGHT / 2, 120, 36, "Menu", () => this.confirmExit(), 15);
 
     if (this.dogs.length > 1) {
       this.add
-        .text(CANVAS_WIDTH - 220, HUD_HEIGHT / 2, "Psy: [1][2][3]", {
+        .text(width - 220, HUD_HEIGHT / 2, "Psy: [1][2][3]", {
           fontFamily: "sans-serif",
           fontSize: "14px",
           color: "#9ca3af",
@@ -133,11 +140,12 @@ export class GameScene extends Phaser.Scene {
   }
 
   private spawnDogs(): void {
+    const { dogBounds } = this.layout;
     const count = this.level.dogCount;
-    const y = DOG_BOUNDS.y + DOG_BOUNDS.height - 20;
+    const y = dogBounds.y + dogBounds.height - 20;
     for (let i = 0; i < count; i++) {
-      const x = DOG_BOUNDS.x + ((i + 1) * DOG_BOUNDS.width) / (count + 1);
-      const dog = new Dog(this, x, y, i, this.level.dogSpeed, this.level.dogInfluenceRadius);
+      const x = dogBounds.x + ((i + 1) * dogBounds.width) / (count + 1);
+      const dog = new Dog(this, x, y, i, this.level.dogSpeed, this.level.dogInfluenceRadius, dogBounds);
       this.dogs.push(dog);
     }
     this.setActiveDog(0);
@@ -149,17 +157,28 @@ export class GameScene extends Phaser.Scene {
   }
 
   private spawnSheep(): void {
+    const { animalBounds, penCenter } = this.layout;
     const minDistFromPen = this.level.penRadius + 60;
     for (let i = 0; i < this.level.sheepCount; i++) {
       let x = 0;
       let y = 0;
       let attempts = 0;
       do {
-        x = randomRange(ANIMAL_BOUNDS.x, ANIMAL_BOUNDS.x + ANIMAL_BOUNDS.width);
-        y = randomRange(ANIMAL_BOUNDS.y, ANIMAL_BOUNDS.y + ANIMAL_BOUNDS.height);
+        x = randomRange(animalBounds.x, animalBounds.x + animalBounds.width);
+        y = randomRange(animalBounds.y, animalBounds.y + animalBounds.height);
         attempts++;
-      } while (Phaser.Math.Distance.Between(x, y, PEN_CENTER.x, PEN_CENTER.y) < minDistFromPen && attempts < 40);
-      this.sheep.push(new Sheep(this, x, y));
+      } while (Phaser.Math.Distance.Between(x, y, penCenter.x, penCenter.y) < minDistFromPen && attempts < 40);
+      this.sheep.push(
+        new Sheep(
+          this,
+          x,
+          y,
+          this.level.sheepWanderSpeed,
+          this.level.sheepFleeMinSpeed,
+          this.level.sheepFleeMaxSpeed,
+          animalBounds,
+        ),
+      );
     }
   }
 
@@ -170,30 +189,41 @@ export class GameScene extends Phaser.Scene {
       if (this.ended) return;
       const activeWolves = this.wolves.filter((w) => !w.eliminated);
       if (activeWolves.length < this.level.wolfCount) {
-        this.spawnWolf();
+        this.warnThenSpawnWolf();
+      } else {
+        this.scheduleWolfSpawn();
       }
+    });
+  }
+
+  private warnThenSpawnWolf(): void {
+    this.showToast("⚠️ Nadciąga wilk!", "#fbbf24");
+    this.time.delayedCall(800, () => {
+      if (this.ended) return;
+      this.spawnWolf();
       this.scheduleWolfSpawn();
     });
   }
 
   private spawnWolf(): void {
+    const { field, animalBounds } = this.layout;
     const edge = Math.floor(randomRange(0, 4));
     let x: number;
     let y: number;
     if (edge === 0) {
-      x = randomRange(FIELD.x, FIELD.x + FIELD.width);
-      y = FIELD.y;
+      x = randomRange(field.x, field.x + field.width);
+      y = field.y;
     } else if (edge === 1) {
-      x = FIELD.x + FIELD.width;
-      y = randomRange(FIELD.y, FIELD.y + FIELD.height);
+      x = field.x + field.width;
+      y = randomRange(field.y, field.y + field.height);
     } else if (edge === 2) {
-      x = randomRange(FIELD.x, FIELD.x + FIELD.width);
-      y = FIELD.y + FIELD.height;
+      x = randomRange(field.x, field.x + field.width);
+      y = field.y + field.height;
     } else {
-      x = FIELD.x;
-      y = randomRange(FIELD.y, FIELD.y + FIELD.height);
+      x = field.x;
+      y = randomRange(field.y, field.y + field.height);
     }
-    const wolf = new Wolf(this, x, y, this.level.wolfSpeed);
+    const wolf = new Wolf(this, x, y, this.level.wolfSpeed, animalBounds, field);
     wolf.on("catch", (sheep: Sheep) => this.onSheepCaught(sheep));
     this.wolves.push(wolf);
   }
@@ -203,17 +233,22 @@ export class GameScene extends Phaser.Scene {
     sheep.caught = true;
     sheep.setVisible(false);
     this.sheepLostCount++;
-    this.showToast("Wilk złapał owcę!");
-    this.time.delayedCall(900, () => this.endLevel(false));
+    const remaining = this.sheep.filter((s) => !s.caught).length;
+    if (remaining === 0) {
+      this.showToast("Wilki złapały wszystkie owce...", "#ff6b6b");
+      this.time.delayedCall(900, () => this.endLevel(false));
+    } else {
+      this.showToast("Wilk złapał owcę! Reszta wciąż czeka na zagrodę.", "#ff6b6b");
+    }
   }
 
-  private showToast(message: string): void {
+  private showToast(message: string, color: string): void {
     this.toast?.destroy();
     this.toast = this.add
-      .text(CANVAS_WIDTH / 2, HUD_HEIGHT + 24, message, {
+      .text(this.layout.width / 2, HUD_HEIGHT + 24, message, {
         fontFamily: "sans-serif",
         fontSize: "18px",
-        color: "#ff6b6b",
+        color,
         backgroundColor: "#000000aa",
         padding: { x: 10, y: 6 },
       })
@@ -233,13 +268,17 @@ export class GameScene extends Phaser.Scene {
     const elapsedSec = (this.time.now - this.startTime) / 1000;
     this.timerText.setText(`${elapsedSec.toFixed(1)} s`);
 
+    const penCenter = this.layout.penCenter;
     const liveSheep = this.sheep.filter((s) => !s.caught);
     const inPen = liveSheep.filter(
-      (s) => Phaser.Math.Distance.Between(s.x, s.y, PEN_CENTER.x, PEN_CENTER.y) < this.level.penRadius - SHEEP_RADIUS * 0.3,
+      (s) => Phaser.Math.Distance.Between(s.x, s.y, penCenter.x, penCenter.y) < this.level.penRadius - SHEEP_RADIUS * 0.3,
     );
-    this.statusText.setText(`W zagrodzie: ${inPen.length} / ${this.level.sheepCount}`);
+    this.statusText.setText(
+      `W zagrodzie: ${inPen.length} / ${this.level.sheepCount}` +
+        (this.sheepLostCount > 0 ? `  (stracone: ${this.sheepLostCount})` : ""),
+    );
 
-    if (this.sheepLostCount === 0 && inPen.length === this.level.sheepCount) {
+    if (liveSheep.length > 0 && inPen.length === liveSheep.length) {
       this.endLevel(true);
     }
   }
@@ -249,7 +288,12 @@ export class GameScene extends Phaser.Scene {
     this.ended = true;
     const elapsedMs = this.time.now - this.startTime;
     this.time.delayedCall(200, () => {
-      this.scene.start("Result", { levelId: this.level.id, elapsedMs, success });
+      this.scene.start("Result", {
+        levelId: this.level.id,
+        elapsedMs,
+        success,
+        sheepLost: this.sheepLostCount,
+      });
     });
   }
 }

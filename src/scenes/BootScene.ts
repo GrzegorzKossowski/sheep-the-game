@@ -7,51 +7,31 @@ export class BootScene extends Phaser.Scene {
   }
 
   create(): void {
-    this.makeDogTexture();
-    this.makeSheepTexture();
-    this.makeWolfTexture();
+    this.makeEmojiTexture("dog", "🐶", DOG_RADIUS);
+    this.makeEmojiTexture("sheep", "🐑", SHEEP_RADIUS);
+    this.makeEmojiTexture("wolf", "🐺", WOLF_RADIUS);
     this.makeGrassTexture();
     this.scene.start("Menu");
   }
 
-  private makeDogTexture(): void {
-    const r = DOG_RADIUS;
-    const g = this.add.graphics();
-    g.fillStyle(0x1e3a8a, 1);
-    g.fillCircle(r, r, r);
-    g.fillStyle(COLORS.dog, 1);
-    g.fillCircle(r, r, r - 2);
-    g.fillStyle(0xdbeafe, 1);
-    g.fillCircle(r - 3, r - 3, 2.5);
-    g.generateTexture("dog", r * 2, r * 2);
-    g.destroy();
-  }
+  /** Renders an emoji onto a soft shadow disc so it reads clearly against the grass. */
+  private makeEmojiTexture(key: string, emoji: string, radius: number): void {
+    const size = Math.round(radius * 2.8);
+    const canvasTexture = this.textures.createCanvas(key, size, size)!;
+    const ctx = canvasTexture.getContext();
 
-  private makeSheepTexture(): void {
-    const r = SHEEP_RADIUS;
-    const g = this.add.graphics();
-    g.fillStyle(COLORS.sheepOutline, 1);
-    g.fillCircle(r, r, r);
-    g.fillStyle(COLORS.sheep, 1);
-    g.fillCircle(r, r, r - 2);
-    g.fillStyle(0x333333, 1);
-    g.fillCircle(r + 3, r - 1, 1.6);
-    g.generateTexture("sheep", r * 2, r * 2);
-    g.destroy();
-  }
+    ctx.clearRect(0, 0, size, size);
+    ctx.fillStyle = "rgba(0, 0, 0, 0.22)";
+    ctx.beginPath();
+    ctx.arc(size / 2, size / 2, size * 0.46, 0, Math.PI * 2);
+    ctx.fill();
 
-  private makeWolfTexture(): void {
-    const r = WOLF_RADIUS;
-    const g = this.add.graphics();
-    g.fillStyle(0x2a0a0a, 1);
-    g.fillCircle(r, r, r);
-    g.fillStyle(COLORS.wolf, 1);
-    g.fillCircle(r, r, r - 2);
-    g.fillStyle(COLORS.wolfEye, 1);
-    g.fillCircle(r + 3, r - 2, 1.6);
-    g.fillCircle(r + 3, r + 2, 1.6);
-    g.generateTexture("wolf", r * 2, r * 2);
-    g.destroy();
+    ctx.font = `${Math.round(size * 0.82)}px sans-serif`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(emoji, size / 2, size / 2 + size * 0.03);
+
+    canvasTexture.refresh();
   }
 
   private makeGrassTexture(): void {

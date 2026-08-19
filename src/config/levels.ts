@@ -5,72 +5,92 @@ export interface LevelConfig {
   wolfCount: number;
   dogSpeed: number;
   dogInfluenceRadius: number;
+  sheepWanderSpeed: number;
+  sheepFleeMinSpeed: number;
+  sheepFleeMaxSpeed: number;
   wolfSpeed: number;
   wolfSpawnDelayMs: [number, number];
   penRadius: number;
   timeThresholds: { threeStar: number; twoStar: number; oneStar: number };
 }
 
+// As sheepCount/dogCount/wolfCount grow, sheep move calmer (lower flee/wander speed)
+// so the extra animals stay manageable instead of compounding into chaos.
 export const LEVELS: LevelConfig[] = [
   {
     id: 1,
     sheepCount: 2,
     dogCount: 1,
     wolfCount: 0,
-    dogSpeed: 220,
+    dogSpeed: 150,
     dogInfluenceRadius: 140,
+    sheepWanderSpeed: 14,
+    sheepFleeMinSpeed: 60,
+    sheepFleeMaxSpeed: 115,
     wolfSpeed: 0,
     wolfSpawnDelayMs: [999999, 999999],
     penRadius: 60,
-    timeThresholds: { threeStar: 18, twoStar: 32, oneStar: 55 },
+    timeThresholds: { threeStar: 28, twoStar: 48, oneStar: 78 },
   },
   {
     id: 2,
     sheepCount: 3,
     dogCount: 1,
     wolfCount: 0,
-    dogSpeed: 230,
+    dogSpeed: 150,
     dogInfluenceRadius: 150,
+    sheepWanderSpeed: 13,
+    sheepFleeMinSpeed: 52,
+    sheepFleeMaxSpeed: 100,
     wolfSpeed: 0,
     wolfSpawnDelayMs: [999999, 999999],
     penRadius: 65,
-    timeThresholds: { threeStar: 26, twoStar: 45, oneStar: 75 },
+    timeThresholds: { threeStar: 38, twoStar: 65, oneStar: 105 },
   },
   {
     id: 3,
     sheepCount: 4,
     dogCount: 2,
     wolfCount: 1,
-    dogSpeed: 240,
+    dogSpeed: 155,
     dogInfluenceRadius: 160,
-    wolfSpeed: 275,
-    wolfSpawnDelayMs: [4000, 9000],
+    sheepWanderSpeed: 11,
+    sheepFleeMinSpeed: 46,
+    sheepFleeMaxSpeed: 90,
+    wolfSpeed: 102,
+    wolfSpawnDelayMs: [8000, 13000],
     penRadius: 72,
-    timeThresholds: { threeStar: 34, twoStar: 58, oneStar: 95 },
+    timeThresholds: { threeStar: 50, twoStar: 85, oneStar: 135 },
   },
   {
     id: 4,
     sheepCount: 5,
     dogCount: 2,
     wolfCount: 1,
-    dogSpeed: 250,
+    dogSpeed: 155,
     dogInfluenceRadius: 170,
-    wolfSpeed: 285,
-    wolfSpawnDelayMs: [3500, 8000],
+    sheepWanderSpeed: 10,
+    sheepFleeMinSpeed: 40,
+    sheepFleeMaxSpeed: 80,
+    wolfSpeed: 92,
+    wolfSpawnDelayMs: [7000, 12000],
     penRadius: 78,
-    timeThresholds: { threeStar: 42, twoStar: 70, oneStar: 115 },
+    timeThresholds: { threeStar: 62, twoStar: 105, oneStar: 165 },
   },
   {
     id: 5,
     sheepCount: 6,
     dogCount: 3,
     wolfCount: 2,
-    dogSpeed: 260,
+    dogSpeed: 160,
     dogInfluenceRadius: 180,
-    wolfSpeed: 295,
-    wolfSpawnDelayMs: [3000, 7000],
+    sheepWanderSpeed: 9,
+    sheepFleeMinSpeed: 34,
+    sheepFleeMaxSpeed: 70,
+    wolfSpeed: 80,
+    wolfSpawnDelayMs: [7000, 11000],
     penRadius: 84,
-    timeThresholds: { threeStar: 50, twoStar: 85, oneStar: 135 },
+    timeThresholds: { threeStar: 78, twoStar: 125, oneStar: 195 },
   },
 ];
 

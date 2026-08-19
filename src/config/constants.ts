@@ -1,44 +1,53 @@
-export const CANVAS_WIDTH = 960;
-export const CANVAS_HEIGHT = 640;
-export const HUD_HEIGHT = 56;
+import type { RectBounds } from "../utils/steering.ts";
 
-// Outer field: where dogs and fleeing/exiting wolves may roam (close to canvas edge).
-export const FIELD = {
-  x: 16,
-  y: HUD_HEIGHT + 16,
-  width: CANVAS_WIDTH - 32,
-  height: CANVAS_HEIGHT - HUD_HEIGHT - 32,
-};
+export const HUD_HEIGHT = 56;
+export const FOREST_MARGIN = 44;
 
 // Inset "safe" containment for sheep and hunting wolves, rounded at the corners
 // so animals can never get wedged into a literal corner.
 export const ANIMAL_MARGIN = 46;
 export const ANIMAL_CORNER_RADIUS = 90;
-
-export const ANIMAL_BOUNDS = {
-  x: FIELD.x + ANIMAL_MARGIN,
-  y: FIELD.y + ANIMAL_MARGIN,
-  width: FIELD.width - ANIMAL_MARGIN * 2,
-  height: FIELD.height - ANIMAL_MARGIN * 2,
-};
-
 export const DOG_MARGIN = 6;
-export const DOG_BOUNDS = {
-  x: FIELD.x + DOG_MARGIN,
-  y: FIELD.y + DOG_MARGIN,
-  width: FIELD.width - DOG_MARGIN * 2,
-  height: FIELD.height - DOG_MARGIN * 2,
-};
 
-export const PEN_CENTER = {
-  x: FIELD.x + FIELD.width / 2,
-  y: FIELD.y + FIELD.height / 2,
-};
+export interface Layout {
+  width: number;
+  height: number;
+  field: RectBounds;
+  animalBounds: RectBounds;
+  dogBounds: RectBounds;
+  penCenter: { x: number; y: number };
+}
+
+/** Computes the play-area layout for the current window size, called once per GameScene session. */
+export function computeLayout(width: number, height: number): Layout {
+  const field: RectBounds = {
+    x: FOREST_MARGIN,
+    y: HUD_HEIGHT + FOREST_MARGIN,
+    width: width - FOREST_MARGIN * 2,
+    height: height - HUD_HEIGHT - FOREST_MARGIN * 2,
+  };
+  const animalBounds: RectBounds = {
+    x: field.x + ANIMAL_MARGIN,
+    y: field.y + ANIMAL_MARGIN,
+    width: field.width - ANIMAL_MARGIN * 2,
+    height: field.height - ANIMAL_MARGIN * 2,
+  };
+  const dogBounds: RectBounds = {
+    x: field.x + DOG_MARGIN,
+    y: field.y + DOG_MARGIN,
+    width: field.width - DOG_MARGIN * 2,
+    height: field.height - DOG_MARGIN * 2,
+  };
+  const penCenter = { x: field.x + field.width / 2, y: field.y + field.height / 2 };
+  return { width, height, field, animalBounds, dogBounds, penCenter };
+}
 
 export const COLORS = {
   background: 0x1b1f16,
   grass: 0x5c9a4a,
   grassAlt: 0x549144,
+  forestDark: 0x1c3318,
+  forestMid: 0x24421e,
   pen: 0xc9a066,
   penBorder: 0x8a6a3c,
   dog: 0x3b82f6,
@@ -56,9 +65,6 @@ export const SHEEP_RADIUS = 9;
 export const DOG_RADIUS = 11;
 export const WOLF_RADIUS = 11;
 
-export const SHEEP_WANDER_SPEED = 16;
-export const SHEEP_FLEE_MIN_SPEED = 90;
-export const SHEEP_FLEE_MAX_SPEED = 175;
 export const SHEEP_FLEE_JITTER_DEG = 18;
 export const SHEEP_SEPARATION_RADIUS = 26;
 
