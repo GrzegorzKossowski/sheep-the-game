@@ -57,3 +57,19 @@ export function isInsideRect(x: number, y: number, bounds: RectBounds): boolean 
 export function randomRange(min: number, max: number): number {
   return min + Math.random() * (max - min);
 }
+
+/** Pushes a point back outside a circle (used to keep wolves out of the safe pen area). */
+export function pushOutsideCircle(
+  x: number,
+  y: number,
+  center: { x: number; y: number },
+  radius: number,
+): { x: number; y: number } {
+  const dx = x - center.x;
+  const dy = y - center.y;
+  const dist = Math.hypot(dx, dy);
+  if (dist >= radius) return { x, y };
+  const nx = dist === 0 ? 1 : dx / dist;
+  const ny = dist === 0 ? 0 : dy / dist;
+  return { x: center.x + nx * radius, y: center.y + ny * radius };
+}

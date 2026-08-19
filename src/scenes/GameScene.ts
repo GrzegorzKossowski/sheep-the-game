@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import { COLORS, computeLayout, HUD_HEIGHT, SHEEP_RADIUS, type Layout } from "../config/constants.ts";
+import { COLORS, computeLayout, HUD_HEIGHT, type Layout } from "../config/constants.ts";
 import { getLevel, type LevelConfig } from "../config/levels.ts";
 import { Dog } from "../entities/Dog.ts";
 import { Sheep } from "../entities/Sheep.ts";
@@ -186,6 +186,8 @@ export class GameScene extends Phaser.Scene {
           this.level.sheepFleeMinSpeed,
           this.level.sheepFleeMaxSpeed,
           animalBounds,
+          penCenter,
+          this.level.penRadius,
         ),
       );
     }
@@ -232,7 +234,16 @@ export class GameScene extends Phaser.Scene {
       x = field.x;
       y = randomRange(field.y, field.y + field.height);
     }
-    const wolf = new Wolf(this, x, y, this.level.wolfSpeed, animalBounds, field);
+    const wolf = new Wolf(
+      this,
+      x,
+      y,
+      this.level.wolfSpeed,
+      animalBounds,
+      field,
+      this.layout.penCenter,
+      this.level.penRadius,
+    );
     wolf.on("catch", (sheep: Sheep) => this.onSheepCaught(sheep));
     wolf.on("eliminated", () => this.showToast("Wilk przepędzony poza planszę!", "#a3e635"));
     wolf.on("gaveUp", () => this.showToast("Wilk się poddaje i się wycofuje.", "#9ca3af"));
@@ -286,11 +297,8 @@ export class GameScene extends Phaser.Scene {
     }
     this.lastLiveStars = liveStars;
 
-    const penCenter = this.layout.penCenter;
     const liveSheep = this.sheep.filter((s) => !s.caught);
-    const inPen = liveSheep.filter(
-      (s) => Phaser.Math.Distance.Between(s.x, s.y, penCenter.x, penCenter.y) < this.level.penRadius - SHEEP_RADIUS * 0.3,
-    );
+    const inPen = liveSheep.filter((s) => s.settled);
     this.statusText.setText(
       `W zagrodzie: ${inPen.length} / ${this.level.sheepCount}` +
         (this.sheepLostCount > 0 ? `  (stracone: ${this.sheepLostCount})` : ""),

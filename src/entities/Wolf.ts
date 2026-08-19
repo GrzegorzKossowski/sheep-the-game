@@ -1,7 +1,7 @@
 import Phaser from "phaser";
 import { ANIMAL_CORNER_RADIUS, SHEEP_RADIUS, WOLF_RADIUS } from "../config/constants.ts";
 import type { RectBounds } from "../utils/steering.ts";
-import { clampToRoundedRect, randomRange } from "../utils/steering.ts";
+import { clampToRoundedRect, pushOutsideCircle, randomRange } from "../utils/steering.ts";
 import type { Dog } from "./Dog.ts";
 import type { Sheep } from "./Sheep.ts";
 
@@ -31,6 +31,8 @@ export class Wolf extends Phaser.GameObjects.Image {
   private huntMs = 0;
   private animalBounds: RectBounds;
   private field: RectBounds;
+  private penCenter: { x: number; y: number };
+  private penExclusionRadius: number;
 
   constructor(
     scene: Phaser.Scene,
@@ -39,11 +41,15 @@ export class Wolf extends Phaser.GameObjects.Image {
     speed: number,
     animalBounds: RectBounds,
     field: RectBounds,
+    penCenter: { x: number; y: number },
+    penRadius: number,
   ) {
     super(scene, x, y, "wolf");
     this.speed = speed;
     this.animalBounds = animalBounds;
     this.field = field;
+    this.penCenter = penCenter;
+    this.penExclusionRadius = penRadius + WOLF_RADIUS + 4;
     scene.add.existing(this);
     this.setDepth(6);
     this.setScale(0);
@@ -173,7 +179,8 @@ export class Wolf extends Phaser.GameObjects.Image {
   }
 
   private clampToAnimalBounds(): void {
-    const clamped = clampToRoundedRect(this.x, this.y, this.animalBounds, ANIMAL_CORNER_RADIUS);
+    let clamped = clampToRoundedRect(this.x, this.y, this.animalBounds, ANIMAL_CORNER_RADIUS);
+    clamped = pushOutsideCircle(clamped.x, clamped.y, this.penCenter, this.penExclusionRadius);
     this.x = clamped.x;
     this.y = clamped.y;
   }
@@ -204,7 +211,7 @@ export class Wolf extends Phaser.GameObjects.Image {
     let nearest: Sheep | null = null;
     let nearestDist = Infinity;
     for (const s of sheep) {
-      if (s.caught) continue;
+      if (s.caught || s.settled) continue;
       const dist = Phaser.Math.Distance.Between(this.x, this.y, s.x, s.y);
       if (dist < nearestDist) {
         nearestDist = dist;

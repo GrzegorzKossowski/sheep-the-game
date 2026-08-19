@@ -1,5 +1,10 @@
 import Phaser from "phaser";
-import { ANIMAL_CORNER_RADIUS, SHEEP_FLEE_JITTER_DEG, SHEEP_SEPARATION_RADIUS } from "../config/constants.ts";
+import {
+  ANIMAL_CORNER_RADIUS,
+  SHEEP_FLEE_JITTER_DEG,
+  SHEEP_RADIUS,
+  SHEEP_SEPARATION_RADIUS,
+} from "../config/constants.ts";
 import type { RectBounds } from "../utils/steering.ts";
 import { clampToRoundedRect, randomRange } from "../utils/steering.ts";
 import type { Dog } from "./Dog.ts";
@@ -8,16 +13,21 @@ import type { Wolf } from "./Wolf.ts";
 const WOLF_FLEE_RADIUS = 170;
 const JITTER_REROLL_MIN_MS = 350;
 const JITTER_REROLL_MAX_MS = 750;
+const SETTLE_SPEED_FACTOR = 0.4;
 
 export class Sheep extends Phaser.GameObjects.Image {
   private wanderAngle = Math.random() * Math.PI * 2;
   private jitterAngle = 0;
   private jitterTimer = 0;
   caught = false;
+  /** Once true the sheep has reached the pen and is safe for good — it stops reacting to dogs/wolves. */
+  settled = false;
   private wanderSpeed: number;
   private fleeMinSpeed: number;
   private fleeMaxSpeed: number;
   private animalBounds: RectBounds;
+  private penCenter: { x: number; y: number };
+  private penRadius: number;
 
   constructor(
     scene: Phaser.Scene,
@@ -27,12 +37,16 @@ export class Sheep extends Phaser.GameObjects.Image {
     fleeMinSpeed: number,
     fleeMaxSpeed: number,
     animalBounds: RectBounds,
+    penCenter: { x: number; y: number },
+    penRadius: number,
   ) {
     super(scene, x, y, "sheep");
     this.wanderSpeed = wanderSpeed;
     this.fleeMinSpeed = fleeMinSpeed;
     this.fleeMaxSpeed = fleeMaxSpeed;
     this.animalBounds = animalBounds;
+    this.penCenter = penCenter;
+    this.penRadius = penRadius;
     scene.add.existing(this);
     this.setDepth(5);
     this.rerollJitter();
@@ -46,6 +60,10 @@ export class Sheep extends Phaser.GameObjects.Image {
 
   update(deltaSec: number, dogs: Dog[], wolves: Wolf[], flock: Sheep[]): void {
     if (this.caught) return;
+    if (this.settled) {
+      this.updateSettled(deltaSec);
+      return;
+    }
 
     this.jitterTimer -= deltaSec * 1000;
     if (this.jitterTimer <= 0) this.rerollJitter();
@@ -118,5 +136,25 @@ export class Sheep extends Phaser.GameObjects.Image {
     const clamped = clampToRoundedRect(this.x, this.y, this.animalBounds, ANIMAL_CORNER_RADIUS);
     this.x = clamped.x;
     this.y = clamped.y;
+
+    const distToPen = Phaser.Math.Distance.Between(this.x, this.y, this.penCenter.x, this.penCenter.y);
+    if (distToPen < this.penRadius - SHEEP_RADIUS * 0.3) {
+      this.settled = true;
+    }
+  }
+
+  /** Grazes calmly inside the pen, ignoring dogs and wolves entirely. */
+  private updateSettled(deltaSec: number): void {
+    this.wanderAngle += randomRange(-0.5, 0.5) * deltaSec;
+    const speed = this.wanderSpeed * SETTLE_SPEED_FACTOR;
+    const nx = this.x + Math.cos(this.wanderAngle) * speed * deltaSec;
+    const ny = this.y + Math.sin(this.wanderAngle) * speed * deltaSec;
+    const maxDist = this.penRadius - SHEEP_RADIUS * 0.8;
+    if (Phaser.Math.Distance.Between(nx, ny, this.penCenter.x, this.penCenter.y) <= maxDist) {
+      this.x = nx;
+      this.y = ny;
+    } else {
+      this.wanderAngle = Phaser.Math.Angle.Between(this.x, this.y, this.penCenter.x, this.penCenter.y) + randomRange(-0.6, 0.6);
+    }
   }
 }
